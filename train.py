@@ -31,12 +31,15 @@ if __name__ == "__main__":
     parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
     parser.add_argument("--train_size", default=50000, type=int, help="How many training samples to use.")
     parser.add_argument("--multigpu", default=False, type=bool, help="Train using multiple GPUs")
+    parser.add_argument("--add_augment", default=False, type=bool, help="Train using multiple GPUs")
+    parser.add_argument("--data_bal", default='equal', type=str, help="Set to 'equal' (default) or 'unequal'.")
     args = parser.parse_args()
     print(args)
 
     initialize(args, seed=42)
 
-    dataset = Cifar(args.batch_size, args.threads, args.train_size, args.seed)
+    dataset = Cifar(args)
+
     log = Log(log_each=10)
     if args.multigpu:
         model = WideResNet(args.depth, args.width_factor, args.dropout, in_channels=3, labels=10)

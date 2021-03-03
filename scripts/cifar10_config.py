@@ -1,9 +1,8 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, RandomSampler, WeightedRandomSampler, BatchSampler, Subset
+from torch.utils.data import DataLoader
 import random
-from utility.cutout import Cutout
 import numpy as np
 import argparse
 
@@ -67,11 +66,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_seeds", default=1, type=int, help="Number of config files to create")
+    parser.add_argument("--equal", default='equal', type=str, help="Set to 'equal' (default) or 'unequal'.")
     args = parser.parse_args()
     print(args)
 
-    args.equal = "equal"
-    numPerClass = [40, 40, 40, 40, 40, 40, 40, 40, 40, 40]
+#    args.equal = "unequal"
+#    numPerClass = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
+#    numPerClass = [62, 43, 81, 92, 71, 70, 52, 57, 61, 64] # Size = 653
+    numPerClass = [53, 40, 78, 87, 67, 66, 63, 56, 51, 51]  #  Size 612
     
     dataset = Cifar(numPerClass)
 

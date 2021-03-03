@@ -9,10 +9,10 @@ from utility.cutout import Cutout
 import numpy as np
 
 class Cifar:
-    def __init__(self, batch_size, threads, train_size, seed):
-        self.train_size = train_size
-        self.batch_size = batch_size
-        self.threads = threads
+    def __init__(self, args):
+#        self.train_size = args.train_size
+        self.batch_size = args.batch_size
+        self.threads = args.threads
 
 #        mean, std = self._get_statistics()
         cifar10_mean = (0.4914, 0.4822, 0.4465)
@@ -22,14 +22,14 @@ class Cifar:
         train_transform = transforms.Compose([
             torchvision.transforms.RandomCrop(size=(32, 32), padding=4),
             torchvision.transforms.RandomHorizontalFlip(),
-            torchvision.transforms.RandomRotation(30.0),
-            CIFAR10Policy(),
             transforms.ToTensor(),
-#            RandAugment(2, 10),
 #            transforms.Normalize(mean, std),
             transforms.Normalize(cifar10_mean, cifar10_std),
             Cutout()
         ])
+        if args.add_augment:
+            train_transform.transforms.insert(0,CIFAR10Policy())
+            train_transform.transforms.insert(0,torchvision.transforms.RandomRotation(30.0))
 
         test_transform = transforms.Compose([
             transforms.ToTensor(),
@@ -38,7 +38,7 @@ class Cifar:
         ])
 
         self.train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transform)
-        filename = ('data/config/cifar10.%d@%d%s.npy' % (seed, train_size, 'equal') )
+        filename = ('data/config/cifar10.%d@%d%s.npy' % (args.seed, args.train_size, args.data_bal) )
         print("Loading data configuration file ", filename)
         train_samples = np.load(filename)
 #        print("train_samples ", train_samples)
