@@ -9,7 +9,9 @@ class Log:
         self.log_each = log_each
         self.epoch = initial_epoch
         self.test_class_accuracies = np.zeros((10), dtype=float)
+        self.average_class_accuracies = np.zeros((10), dtype=float)
         self.test_class_sizes = np.zeros((10), dtype=float)
+        self.alpha = 0.1
 
     def train(self, len_dataset: int) -> None:
         self.epoch += 1
@@ -52,7 +54,8 @@ class Log:
 
             for i in range(10):
                 self.test_class_accuracies[i] = self.test_class_accuracies[i] / self.test_class_sizes[i]
-                class_accuracies[i] = "{:.2f}".format(100*self.test_class_accuracies[i])
+                self.average_class_accuracies[i] = self.alpha*self.test_class_accuracies[i] + (1.0-self.alpha)*self.average_class_accuracies[i]
+                class_accuracies[i] = "{:.2f}".format(100*self.average_class_accuracies[i])
 
             if accuracy > self.best_accuracy:
                 self.best_accuracy = accuracy

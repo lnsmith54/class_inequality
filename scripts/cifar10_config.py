@@ -13,9 +13,10 @@ class Cifar:
         cifar10_mean = (0.4914, 0.4822, 0.4465)
         cifar10_std = (0.2471, 0.2435, 0.2616)
         cifar10TrainSize = [5000, 10]
+        numClasses = 10
         batch_size = 1000
 
-        size = sum(numPerClass)
+        size = numClasses*numPerClass
         print("size ", size)
 
         transform = transforms.Compose([
@@ -26,7 +27,7 @@ class Cifar:
         
         labels = []
         i = 0
-        indx = np.zeros([10], dtype=int)
+        indx = np.zeros([numClasses], dtype=int)
         samples = np.zeros(cifar10TrainSize, dtype=int)
     
         for sample, label in DataLoader(self.train_set, batch_size=batch_size ):
@@ -36,25 +37,25 @@ class Cifar:
                 indx[l] += 1
                 i += 1
 
-        for i in range(cifar10TrainSize[1]):
+        for i in range(numClasses):
             samples[:indx[i],i] = random.sample(samples[:indx[i],i].tolist(),k=indx[i])
 
         indx *= 0
         for seed in range(args.num_seeds):
             train_samples = []
-            for i in range(cifar10TrainSize[1]):
-                for j in range(indx[i],indx[i]+numPerClass[i]):
+            for i in range(numClasses):
+                for j in range(indx[i],indx[i]+numPerClass):
                     train_samples.append(samples[j,i])
-                indx[i] = indx[i] + numPerClass[i]
+                indx[i] = indx[i] + numPerClass
 
-            filename = ('data/config/cifar10.%d@%d%s.npy' % (seed, size, args.equal) )
+            filename = ('data/config/cifar10.%d@%d%s.npy' % (seed, size, 'equal') )
             print("Writing file ", filename)
             np.save(filename, train_samples)
             # To print clear text versions (for Debug)
             if debug == 1:
                 fileOut = open(filename,'w')
-                for i in range(cifar10TrainSize[1]):
-                    fileOut.write(str(numPerClass[i])+", ")
+                for i in range(numClasses):
+                    fileOut.write(str(numPerClass)+", ")
                 fileOut.write("\n")
                 for i in range(size):
                     fileOut.write(str(train_samples[i])+", ")
@@ -65,16 +66,13 @@ class Cifar:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_seeds", default=1, type=int, help="Number of config files to create")
-    parser.add_argument("--equal", default='equal', type=str, help="Set to 'equal' (default) or 'unequal'.")
+    parser.add_argument("--num_seeds", default=1, type=int, help="Number of config files to create.")
+    parser.add_argument("--num_class", default=40, type=int, help="Number of labeled samples per class.")
     args = parser.parse_args()
     print(args)
 
-#    args.equal = "unequal"
-#    numPerClass = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
-#    numPerClass = [62, 43, 81, 92, 71, 70, 52, 57, 61, 64] # Size = 653
-    numPerClass = [53, 40, 78, 87, 67, 66, 63, 56, 51, 51]  #  Size 612
+#    numPerClass = 40
     
-    dataset = Cifar(numPerClass)
+    dataset = Cifar(args.num_class)
 
     exit(1)

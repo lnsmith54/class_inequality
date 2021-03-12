@@ -27,7 +27,7 @@ class Cifar:
             transforms.Normalize(cifar10_mean, cifar10_std),
             Cutout()
         ])
-        if args.add_augment:
+        if args.add_augment > 0:
             train_transform.transforms.insert(0,CIFAR10Policy())
             train_transform.transforms.insert(0,torchvision.transforms.RandomRotation(30.0))
 

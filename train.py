@@ -13,6 +13,7 @@ from utility.step_lr import StepLR
 from utility.poly_lr import PolyLR
 import sys; sys.path.append("..")
 from sam import SAM
+from pytorch_loss.focal_loss import FocalLossV3
 
 
 if __name__ == "__main__":
@@ -30,8 +31,9 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", default=0.0005, type=float, help="L2 weight decay.")
     parser.add_argument("--width_factor", default=8, type=int, help="How many times wider compared to normal ResNet.")
     parser.add_argument("--train_size", default=50000, type=int, help="How many training samples to use.")
-    parser.add_argument("--multigpu", default=False, type=bool, help="Train using multiple GPUs")
-    parser.add_argument("--add_augment", default=False, type=bool, help="Train using multiple GPUs")
+    parser.add_argument("--multigpu", default=0, type=int, help="Train using multiple GPUs")
+    parser.add_argument("--add_augment", default=1, type=int, help="Train using multiple GPUs")
+    parser.add_argument("--loss", default=0, type=int, help="= 0, smooth CE; = 1, focal loss.")
     parser.add_argument("--data_bal", default='equal', type=str, help="Set to 'equal' (default) or 'unequal'.")
     args = parser.parse_args()
     print(args)
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     dataset = Cifar(args)
 
     log = Log(log_each=10)
-    if args.multigpu:
+    if args.multigpu == 1:
         model = WideResNet(args.depth, args.width_factor, args.dropout, in_channels=3, labels=10)
         model = nn.DataParallel(model).cuda()
     else:
@@ -51,6 +53,7 @@ if __name__ == "__main__":
     optimizer = SAM(model.parameters(), base_optimizer, rho=args.rho, lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
 #    scheduler = StepLR(optimizer, args.learning_rate, args.epochs)
     scheduler = PolyLR(optimizer, args.learning_rate, args.epochs)
+    criteria = FocalLossV3(alpha=0.25, gamma=2, reduction='none')
 
     test_class_accuracies = np.zeros((10), dtype=float)
     tic = time.perf_counter()
@@ -63,12 +66,20 @@ if __name__ == "__main__":
 
             # first forward-backward step
             predictions = model(inputs)
-            loss = smooth_crossentropy(predictions, targets)
+            if args.loss == 0:
+                loss = smooth_crossentropy(predictions, targets)
+            else:
+                loss = criteria(predictions, targets).sum(-1)
             loss.mean().backward()
+#            print("loss ", loss.size())
             optimizer.first_step(zero_grad=True)
 
             # second forward-backward step
             smooth_crossentropy(model(inputs), targets).mean().backward()
+#            if args.loss == 0:
+#                smooth_crossentropy(model(inputs), targets).mean().backward()
+#            else:
+#                criteria(model(inputs), targets).sum(-1).mean().backward()
             optimizer.second_step(zero_grad=True)
 
             with torch.no_grad():
